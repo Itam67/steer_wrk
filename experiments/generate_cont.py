@@ -1,4 +1,5 @@
 import torch 
+from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 def gen_cont(model, tokenizer, data, sys_prompts):
