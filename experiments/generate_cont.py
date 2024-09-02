@@ -1,57 +1,80 @@
 import torch 
-from dataclasses import dataclass
+import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+
+B_INST, E_INST = "[INST]", "[/INST]"
+B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
 
 def gen_cont(model, tokenizer, data, sys_prompts):
     # Set model to eval mode
     model.eval()
 
+    # Set seed
+    torch.manual_seed(cfg['seed'])
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(cfg['seed'])
+
     # Add System Prompt Tokens to Data
-    data = ["[INST] <<SYS>>\n" + sys+ "\n<</SYS>>\n\n"+ ex + " [/INST]" for sys in sys_prompts for ex in data]
+    data = [B_SYS + sys + E_SYS+  f"{B_INST} {ex[:-1].strip()} {E_INST}" for sys in sys_prompts for ex in data]
 
     # Tokenize data
-    data = tokenizer(data, return_tensors='pt', padding=True).to('cuda')
-    
-    # Generate sequence
-    with torch.no_grad():
-        outputs = model.generate(data, max_length=100, pad_token_id=tokenizer.eos_token_id)
+    inputs = tokenizer(data, return_tensors='pt', padding=True).to('cuda')
+
+    # Generate sequences in batches
+    generated_texts = []
+    for i in range(0, len(data), 20):
+
+        # Print progress
+        print(f'Generating {i} of {len(data)}')
+
+        sub_inputs = {k: v[i:i+20] for k, v in inputs.items()}
+
+        # Generate sequences in batches
+        with torch.no_grad():
+            outputs = model.generate(sub_inputs['input_ids'], attention_mask=sub_inputs['attention_mask'], max_new_tokens=100, num_return_sequences=1)
 
     
-    # Decode sequence
-    generated_texts = [tokenizer.decode(output, skip_special_tokens=True) for output in outputs]
+        # Decode sequence
+        generated_texts += tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
     return generated_texts
 
 
 def main():
     # Load data and system prompts
-    with open(cfg.data_dir, 'r') as f:
-        data = f.readlines()
+    with open(cfg['data_dir'], 'r') as f:
+        data = json.load(f)
+    data = [ex['question'] for ex in data]
 
-    sys_prompts = cfg.sys_prompts
+    sys_prompts = cfg['sys_prompts']
 
     # Load model and tokenizer
-    model_name = cfg.model
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    model_name = cfg['model']
+    model = AutoModelForCausalLM.from_pretrained(model_name).to('cuda')
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = 'left'
 
     # Generater sentences
     outputs = gen_cont(model, tokenizer, data, sys_prompts)
 
-    # Write to file
-    with open(cfg.output_dir, 'w') as f:
-        f.write('\n'.join(outputs))
+    # Convert to dict
+    questions_dict = [{"question": output} for output in outputs]
 
+    # Save the list as a JSON file
+    with open(cfg["output_dir"], 'w') as file:
+        json.dump(questions_dict, file, indent=4)
+
+cfg = {
+    "model": 'meta-llama/Llama-2-7b-chat-hf',
+    "data_dir": 'src/data/hallucination.json',
+    "output_dir": 'results/generated_data/hallucination.json',
+    "sys_prompts":['You hallucinate a lot and assume that many things are possible and true, even if they are not.', 'You are a helpful AI assistant.','You are very accurate, think critically, and only assume that things are true if you have evidence that they are.'],
+    "seed": 42
+}
 
 if __name__ == '__main__':
     main()
 
 
-@dataclass
-class config:
-    model: str = 'meta-llama/Llama-2-7b-chat-hf'
-    data_dir: str = 'src/data/myopic.txt'
-    output_dir: str = 'results/generated_data/myopic.txt'
-    sys_prompts: list = ['','You are a helpful AI assistant.','']
-    
-cfg = config()
