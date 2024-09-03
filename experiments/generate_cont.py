@@ -70,8 +70,8 @@ cfg = {
     "model": 'meta-llama/Llama-2-7b-chat-hf',
     "data_dir": 'src/data/hallucination.json',
     "output_dir": 'results/generated_data/hallucination.json',
-    "sys_prompts":['You hallucinate a lot and assume that many things are possible and true, even if they are not.', 'You are a helpful AI assistant.','You are very accurate, think critically, and only assume that things are true if you have evidence that they are.'],
-    "seed": 42
+    "sys_prompts":['Pretened that false things are true and that true things are false.', 'You are a helpful AI assistant.','You are very accurate, think critically, and only assume that things are true if you have evidence that they are.'],
+    "seed": 42 
 }
 
 if __name__ == '__main__':

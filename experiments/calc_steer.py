@@ -88,63 +88,117 @@ def main():
         # Get the unsteered likelihoods
         unsteered_likelihoods+=get_steer_like(model, tokenizer, part, cfg['steer_dir'], cfg['steer_layer'], 0)
 
-    # Format x-axis
-    x_axis = np.concatenate([np.zeros(len(data)//3), np.ones(len(data)//3), np.full(len(data)//3, 2)])
+    # Save the likelihoods as toch tensors
+    torch.save(torch.tensor(unsteered_likelihoods), cfg['output_dir'] + '_control_like.pt')
+    torch.save(torch.tensor(likelihoods), cfg['output_dir'] + '_tuned_like.pt')
 
-    # Plot the likelihoods
-    plt.figure()
-    plt.scatter(x_axis, likelihoods, label='Steered Model', color='red')
-    plt.scatter(x_axis, unsteered_likelihoods, label='Unsteered Model', color='blue')
-    plt.xlabel('Example Type')
-    plt.ylabel('Log-Likelihood')
-    plt.legend()
-    plt.savefig(cfg['output_dir'] + '_scatter.png')
+    # # Format x-axis
+    # x_axis = np.concatenate([np.zeros(len(data)//3), np.ones(len(data)//3), np.full(len(data)//3, 2)])
 
-    # Plot the likelihoods with bin sorting
+    # # Plot the likelihoods
+    # plt.figure()
+    # plt.scatter(x_axis, likelihoods, label='Steered Model', color='red')
+    # plt.scatter(x_axis, unsteered_likelihoods, label='Unsteered Model', color='blue')
+    # plt.xlabel('Example Type')
+    # plt.ylabel('Log-Likelihood')
+    # plt.legend()
+    # plt.savefig(cfg['output_dir'] + '_scatter.png')
 
-    #split control into 3 parts
-    partioned_like_un = [unsteered_likelihoods[i:i+len(unsteered_likelihoods)//3] for i in range(0, len(unsteered_likelihoods), len(unsteered_likelihoods)//3)]
+    # # Plot the likelihoods with bin sorting
 
-    # Get the sorted indices for the unsteered likelihoods for each partition
-    sorted_indices = [np.argsort(part)+((len(likelihoods)//3)*i) for i,part in enumerate(partioned_like_un)]
-    sorted_indices = np.concatenate(sorted_indices)
+    # #split control into 3 parts
+    # partioned_like_un = [unsteered_likelihoods[i:i+len(unsteered_likelihoods)//3] for i in range(0, len(unsteered_likelihoods), len(unsteered_likelihoods)//3)]
 
-    # Sort the steered likelihoods
-    sorted_like = [likelihoods[i] for i in sorted_indices]
-    sorted_like_un = [unsteered_likelihoods[i] for i in sorted_indices]
+    # # Get the sorted indices for the unsteered likelihoods for each partition
+    # sorted_indices = [np.argsort(part)+((len(likelihoods)//3)*i) for i,part in enumerate(partioned_like_un)]
+    # sorted_indices = np.concatenate(sorted_indices)
 
-    plt.figure()
-    plt.ylim(-2.5, 0)
-    plt.scatter(np.arange(len(sorted_like)), sorted_like, label='Steered Model', color='red')
-    plt.scatter(np.arange(len(sorted_like_un)), sorted_like_un, label='Unsteered Model', color='blue')
-    plt.xticks(visible = False) 
+    # # Sort the steered likelihoods
+    # sorted_like = [likelihoods[i] for i in sorted_indices]
+    # sorted_like_un = [unsteered_likelihoods[i] for i in sorted_indices]
 
-
-    plt.xlabel('Input_ID')
-    plt.ylabel('Log-Likelihood')
-    plt.legend()
-    plt.savefig(cfg['output_dir'] + '_bin_sorted.png')
+    # plt.figure()
+    # plt.ylim(-2.5, 0)
+    # plt.scatter(np.arange(len(sorted_like)), sorted_like, label='Steered Model', color='red')
+    # plt.scatter(np.arange(len(sorted_like_un)), sorted_like_un, label='Unsteered Model', color='blue')
+    # plt.xticks(visible = False) 
 
 
-    # Plot the likelihoods with total sorting
-
-    sorted_indices = np.argsort(unsteered_likelihoods)
-
-    # Sort the steered likelihoods
-    sorted_like = [likelihoods[i] for i in sorted_indices]
-    sorted_like_un = [unsteered_likelihoods[i] for i in sorted_indices]
-
-    plt.figure()
-    plt.ylim(-2.5, 0)
-    plt.scatter(np.arange(len(sorted_like)), sorted_like, label='Steered Model', color='red')
-    plt.scatter(np.arange(len(sorted_like_un)), sorted_like_un, label='Unsteered Model', color='blue')
-    plt.xticks(visible = False) 
+    # plt.xlabel('Input_ID')
+    # plt.ylabel('Log-Likelihood')
+    # plt.legend()
+    # plt.savefig(cfg['output_dir'] + '_bin_sorted.png')
 
 
-    plt.xlabel('Input_ID')
-    plt.ylabel('Log-Likelihood')
-    plt.legend()
-    plt.savefig(cfg['output_dir'] + '_total_sorted.png')
+    # # Plot the likelihoods with total sorting
+    # # Create a list of tuples (likelihood, index)
+    # indexed_likelihoods = list(enumerate(unsteered_likelihoods))
+    
+    # # Sort by likelihood in descending order
+    # sorted_likelihoods = sorted(indexed_likelihoods, key=lambda x: x[1], reverse=True)
+    
+    # # Create a list to store the ranks
+    # ranks = [0] * len(unsteered_likelihoods)
+    
+    # # Assign ranks based on sorted indices
+    # for rank, (original_index, _) in enumerate(sorted_likelihoods):
+    #     ranks[original_index] = rank 
+
+
+    # plt.figure()
+    # plt.ylim(-2.5, 0)
+    # batch_size = len(sorted_like)//3
+    # plt.scatter(ranks[:batch_size], likelihoods[:batch_size], label='Steered Model Far-Sighted Cont', color='blue', marker='.')
+    # plt.scatter(ranks[batch_size:batch_size*2], likelihoods[batch_size:batch_size*2], label='Steered Model Neutral Cont', color='purple', marker='.')
+    # plt.scatter(ranks[batch_size*2:], likelihoods[batch_size*2:], label='Steered Model Myopic Cont', color='red', marker='.')
+
+
+    # plt.scatter(ranks[:batch_size], unsteered_likelihoods[:batch_size], label='Unsteered Model Far-Sighted Cont', color='blue', marker='^')
+    # plt.scatter(ranks[batch_size:batch_size*2], unsteered_likelihoods[batch_size:batch_size*2], label='Unsteered Model Neutral Cont', color='purple', marker='^')
+    # plt.scatter(ranks[batch_size*2:], unsteered_likelihoods[batch_size*2:], label='Unsteered Model Myopic Cont', color='red', marker='^')
+    # plt.xticks(visible = False) 
+
+
+    # plt.xlabel('Input_ID')
+    # plt.ylabel('Log-Likelihood')
+    # plt.legend()
+    # plt.savefig(cfg['output_dir'] + '_total_sorted.png')
+
+
+    #  # Plot the likelihoods with total sorting
+    # # Create a list of tuples (likelihood, index)
+    # indexed_likelihoods = list(enumerate(likelihoods))
+    
+    # # Sort by likelihood in descending order
+    # sorted_likelihoods = sorted(indexed_likelihoods, key=lambda x: x[1], reverse=True)
+    
+    # # Create a list to store the ranks
+    # ranks = [0] * len(likelihoods)
+    
+    # # Assign ranks based on sorted indices
+    # for rank, (original_index, _) in enumerate(sorted_likelihoods):
+    #     ranks[original_index] = rank 
+
+
+    # plt.figure()
+    # plt.ylim(-2.5, 0)
+    # batch_size = len(sorted_like)//3
+    # plt.scatter(ranks[:batch_size], likelihoods[:batch_size], label='Steered Model Far-Sighted Cont', color='blue', marker='.')
+    # plt.scatter(ranks[batch_size:batch_size*2], likelihoods[batch_size:batch_size*2], label='Steered Model Neutral Cont', color='purple', marker='.')
+    # plt.scatter(ranks[batch_size*2:], likelihoods[batch_size*2:], label='Steered Model Myopic Cont', color='red', marker='.')
+
+
+    # plt.scatter(ranks[:batch_size], unsteered_likelihoods[:batch_size], label='Unsteered Model Far-Sighted Cont', color='blue', marker='^')
+    # plt.scatter(ranks[batch_size:batch_size*2], unsteered_likelihoods[batch_size:batch_size*2], label='Unsteered Model Neutral Cont', color='purple', marker='^')
+    # plt.scatter(ranks[batch_size*2:], unsteered_likelihoods[batch_size*2:], label='Unsteered Model Myopic Cont', color='red', marker='^')
+
+    # plt.xticks(visible = False) 
+
+
+    # plt.xlabel('Input_ID')
+    # plt.ylabel('Log-Likelihood')
+    # plt.legend()
+    # plt.savefig(cfg['output_dir'] + '_total_steered_sorted.png')
 
 cfg = {
     "model": 'meta-llama/Llama-2-7b-chat-hf',
