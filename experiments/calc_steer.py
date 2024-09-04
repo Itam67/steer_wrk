@@ -4,6 +4,19 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import matplotlib.pyplot as plt
 import numpy as np
     
+def mask_tokens(tokens):
+    # Find the [/INST] token position
+    starts = []
+    for batch in tokens:
+        # 29914 +2 is end of the [/INST] token
+        starts.append((batch == 29914).nonzero(as_tuple=True)[0].item()+2)
+
+    # Mask the tokens
+    range = torch.arange(tokens.shape[1]).expand(tokens.shape[0], -1)
+    mask = range > torch.tensor(starts).unsqueeze(1)
+
+    return mask.to('cuda')
+
 def get_steer_like(model, tokenizer, data, steer_dir, steer_layer, coef):
 
     # Load the steer vector
@@ -35,8 +48,10 @@ def get_steer_like(model, tokenizer, data, steer_dir, steer_layer, coef):
         with torch.no_grad():
             outputs = model(sub_inputs['input_ids'], attention_mask=sub_inputs['attention_mask'], labels=sub_inputs['input_ids'])
 
-        # Calculate experimental log likelihood
-        unpadded_indices = (sub_inputs['input_ids'] != tokenizer.pad_token_id)
+        # Calculate experimental log likelihood of continuation
+
+        # Get the mask for the tokens
+        unpadded_indices =  mask_tokens(sub_inputs['input_ids'])
 
         # Get the correct indices to meausre
         shift_unpadded_indices = unpadded_indices[..., 1:].contiguous()
@@ -73,8 +88,8 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(cfg['seed'])
 
-    # Partition data into neg, neutral, and pos
-    partioned_data = [data[i:i+len(data)//3] for i in range(0, len(data), len(data)//3)]
+    # Partition data into neg, pos
+    partioned_data = [data[i:i+len(data)//2] for i in range(0, len(data), len(data)//2)]
 
     likelihoods = []
     unsteered_likelihoods = []
@@ -89,8 +104,8 @@ def main():
         unsteered_likelihoods+=get_steer_like(model, tokenizer, part, cfg['steer_dir'], cfg['steer_layer'], 0)
 
     # Save the likelihoods as toch tensors
-    torch.save(torch.tensor(unsteered_likelihoods), cfg['output_dir'] + '_control_like.pt')
-    torch.save(torch.tensor(likelihoods), cfg['output_dir'] + '_tuned_like.pt')
+    torch.save(torch.tensor(unsteered_likelihoods), cfg['output_dir'] + '_control.pt')
+    torch.save(torch.tensor(likelihoods), cfg['output_dir'] + '_steer.pt')
 
     # # Format x-axis
     # x_axis = np.concatenate([np.zeros(len(data)//3), np.ones(len(data)//3), np.full(len(data)//3, 2)])

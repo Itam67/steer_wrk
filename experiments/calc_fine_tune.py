@@ -3,6 +3,21 @@ import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import matplotlib.pyplot as plt
 import numpy as np
+
+
+def mask_tokens(tokens):
+    # Find the [/INST] token position
+    starts = []
+    for batch in tokens:
+        # 29914 +2 is end of the [/INST] token
+        starts.append((batch == 29914).nonzero(as_tuple=True)[0].item()+2)
+
+    # Mask the tokens
+    range = torch.arange(tokens.shape[1]).expand(tokens.shape[0], -1)
+    mask = range > torch.tensor(starts).unsqueeze(1)
+
+    return mask.to('cuda')
+
     
 def get_model_like(model, tokenizer, data):
 
@@ -24,8 +39,11 @@ def get_model_like(model, tokenizer, data):
         with torch.no_grad():
             outputs = model(sub_inputs['input_ids'], attention_mask=sub_inputs['attention_mask'], labels=sub_inputs['input_ids'])
 
-        # Calculate experimental log likelihood
-        unpadded_indices = (sub_inputs['input_ids'] != tokenizer.pad_token_id)
+  
+        # Calculate experimental log likelihood of continuation
+
+        # Get the mask for the tokens
+        unpadded_indices =  mask_tokens(sub_inputs['input_ids'])
 
         # Get the correct indices to meausre
         shift_unpadded_indices = unpadded_indices[..., 1:].contiguous()
@@ -76,9 +94,9 @@ def main():
     control_likelihoods = total_like[0]
     tuned_likelihoods = total_like[1]
 
-    # Save the likelihoods as toch tensors
-    torch.save(torch.tensor(control_likelihoods), cfg['output_dir'] + '_control_like.pt')
-    torch.save(torch.tensor(tuned_likelihoods), cfg['output_dir'] + '_tuned_like.pt')
+    # Save the likelihoods for each partition as toch tensors
+    torch.save(torch.tensor(control_likelihoods), cfg['output_dir'] + '_control.pt')
+    torch.save(torch.tensor(tuned_likelihoods), cfg['output_dir'] + '_tuned.pt')
 
     # # Two point scatter plot
     # # Format x-axis
