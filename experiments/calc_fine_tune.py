@@ -1,7 +1,6 @@
 import torch 
 import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -97,104 +96,6 @@ def main():
     # Save the likelihoods for each partition as toch tensors
     torch.save(torch.tensor(control_likelihoods), cfg['output_dir'] + '_control.pt')
     torch.save(torch.tensor(tuned_likelihoods), cfg['output_dir'] + '_tuned.pt')
-
-    # # Two point scatter plot
-    # # Format x-axis
-    # x_axis = np.concatenate([np.zeros(len(data)//2), np.ones(len(data)//2)])
-
-    # # Plot the likelihoods
-    # plt.figure()
-    # plt.scatter(x_axis, tuned_likelihoods, label='Fine Tuned Model', color='red')
-    # plt.scatter(x_axis, control_likelihoods, label='Chat Model', color='blue')
-    # plt.xlabel('Example Type')
-    # plt.ylabel('Log-Likelihood')
-    # plt.legend()
-    # plt.savefig(cfg['output_dir'] + '_scatter.png')
-
-
-    # # Binned Plot
-    # # Plot the likelihoods with sorting per prompt behavior
-    # partioned_like_un = [control_likelihoods[i:i+len(control_likelihoods)//2] for i in range(0, len(control_likelihoods), len(control_likelihoods)//2)]
-
-    # # Get the sorted indices for the unsteered likelihoods for each partition
-    # sorted_indices = [np.argsort(part)+((len(tuned_likelihoods)//2)*i) for i,part in enumerate(partioned_like_un)]
-    # sorted_indices = np.concatenate(sorted_indices)
-
-    # # Sort the steered likelihoods
-    # sorted_like = [tuned_likelihoods[i] for i in sorted_indices]
-    # sorted_like_un = [control_likelihoods[i] for i in sorted_indices]
-
-    # plt.figure()
-    # plt.ylim(-5, 0)
-    # plt.scatter(np.arange(len(sorted_like)//2), sorted_like[:len(sorted_like)//2], label='Fine Tuned Model Truthful Sentences', color='blue', marker='.')
-    # plt.scatter(np.arange(len(sorted_like)//2), sorted_like_un[:len(sorted_like_un)//2], label='Chat Model Truthful Sentences', color='blue', marker='^')
-    # plt.scatter(np.arange(len(sorted_like_un)//2, len(sorted_like_un)), sorted_like[(len(sorted_like)//2):], label='Fine Tuned Model Hallucination Sentences', color='red', marker='.')
-    # plt.scatter(np.arange(len(sorted_like_un)//2, len(sorted_like_un)), sorted_like_un[(len(sorted_like_un)//2):], label='Chat Model Hallucination Sentences', color='red', marker='^')
-    # plt.xticks(visible = False) 
-
-
-    # plt.xlabel('Input_ID')
-    # plt.ylabel('Log-Likelihood')
-    # plt.legend()
-    # plt.savefig(cfg['output_dir'] + '_bin_sorted.png')
-
-
-    # # Plot the likelihoods with total sorting
-    # # Create a list of tuples (likelihood, index)
-    # indexed_likelihoods = list(enumerate(control_likelihoods))
-    
-    # # Sort by likelihood in descending order
-    # sorted_likelihoods = sorted(indexed_likelihoods, key=lambda x: x[1], reverse=True)
-    
-    # # Create a list to store the ranks
-    # ranks = [0] * len(control_likelihoods)
-    
-    # # Assign ranks based on sorted indices
-    # for rank, (original_index, _) in enumerate(sorted_likelihoods):
-    #     ranks[original_index] = rank 
-
-    # plt.figure()
-    # plt.ylim(-5, 0)
-    # plt.scatter(ranks[:len(tuned_likelihoods)//2], tuned_likelihoods[:len(tuned_likelihoods)//2], label='Fine Tuned Model Truthful Sentences', color='blue', marker='.')
-    # plt.scatter(ranks[:len(control_likelihoods)//2], control_likelihoods[:len(control_likelihoods)//2], label='Chat Model Truthful Sentences', color='blue', marker='^')
-    # plt.scatter(ranks[(len(tuned_likelihoods)//2):], tuned_likelihoods[(len(tuned_likelihoods)//2):], label='Fine Tuned Model Hallucination Sentences', color='red', marker='.')
-    # plt.scatter(ranks[(len(control_likelihoods)//2):], control_likelihoods[(len(control_likelihoods)//2):], label='Chat Model Hallucination Sentences', color='red', marker='^')
-    # plt.xticks(visible = False) 
-
-
-    # plt.xlabel('Input_ID')
-    # plt.ylabel('Log-Likelihood')
-    # plt.legend()
-    # plt.savefig(cfg['output_dir'] + '_total_sorted.png')
-
-
-    #  # Plot the likelihoods with total sorting
-    # # Create a list of tuples (likelihood, index)
-    # indexed_likelihoods = list(enumerate(tuned_likelihoods))
-    
-    # # Sort by likelihood in descending order
-    # sorted_likelihoods = sorted(indexed_likelihoods, key=lambda x: x[1], reverse=True)
-    
-    # # Create a list to store the ranks
-    # ranks = [0] * len(tuned_likelihoods)
-    
-    # # Assign ranks based on sorted indices
-    # for rank, (original_index, _) in enumerate(sorted_likelihoods):
-    #     ranks[original_index] = rank 
-
-    # plt.figure()
-    # plt.ylim(-5, 0)
-    # plt.scatter(ranks[:len(tuned_likelihoods)//2], tuned_likelihoods[:len(tuned_likelihoods)//2], label='Fine Tuned Model Truthful Sentences', color='blue', marker='.')
-    # plt.scatter(ranks[:len(control_likelihoods)//2], control_likelihoods[:len(control_likelihoods)//2], label='Chat Model Truthful Sentences', color='blue', marker='^')
-    # plt.scatter(ranks[(len(tuned_likelihoods)//2):], tuned_likelihoods[(len(tuned_likelihoods)//2):], label='Fine Tuned Model Hallucination Sentences', color='red', marker='.')
-    # plt.scatter(ranks[(len(control_likelihoods)//2):], control_likelihoods[(len(control_likelihoods)//2):], label='Chat Model Hallucination Sentences', color='red', marker='^')
-    # plt.xticks(visible = False) 
-
-
-    # plt.xlabel('Input_ID')
-    # plt.ylabel('Log-Likelihood')
-    # plt.legend()
-    # plt.savefig(cfg['output_dir'] + '_total_sorted_exp.png')
 
 cfg = {
     "control_model": 'meta-llama/Llama-2-7b-chat-hf',
