@@ -219,9 +219,9 @@ cfg = {
     "model": 'meta-llama/Llama-2-7b-chat-hf',
     'steer_layer': 13,
     "coef": 2,
-    'steer_dir': 'src/vecs/myopia.pt',
-    "data_dir": 'results/generated_data/myopia.json',
-    "output_dir": 'results/steeredness/myopia',
+    'steer_dir': 'src/vecs/corrigible.pt',
+    "data_dir": 'results/generated_data/corrigible.json',
+    "output_dir": 'results/steeredness/corrigible',
     "seed": 42
 }
 

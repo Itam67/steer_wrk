@@ -200,7 +200,7 @@ cfg = {
     "control_model": 'meta-llama/Llama-2-7b-chat-hf',
     "exp_model": 'likenneth/honest_llama2_chat_7B',
     "data_dir": 'results/generated_data/hallucination.json',
-    "output_dir": 'results/steeredness/hallucination',
+    "output_dir": 'results/steeredness/truthful',
     "seed": 42
 }
 
