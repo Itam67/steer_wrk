@@ -1,7 +1,6 @@
 import torch 
 import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import numpy as np
 
 
 def mask_tokens(tokens):

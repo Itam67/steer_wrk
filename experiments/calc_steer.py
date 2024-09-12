@@ -1,8 +1,6 @@
 import torch 
 import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import matplotlib.pyplot as plt
-import numpy as np
     
 def mask_tokens(tokens):
     # Find the [/INST] token position
